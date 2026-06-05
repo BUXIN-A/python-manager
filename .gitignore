@@ -1,0 +1,16 @@
+# Build directory
+build/
+
+# Config file (local settings)
+config.json
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Other
+.trae/
+run_tests.ps1
+build_package.ps1

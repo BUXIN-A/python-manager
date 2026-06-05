@@ -1,0 +1,4 @@
+// pythonw.rc - Pythonw Interpreter Proxy Icon Resource
+// IDI_ICON1 is the main application icon
+
+IDI_ICON1 ICON "python.ico"

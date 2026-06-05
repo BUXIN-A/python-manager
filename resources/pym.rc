@@ -1,0 +1,4 @@
+// pym.rc - Python Version Manager Icon Resource
+// IDI_ICON1 is the main application icon
+
+IDI_ICON1 ICON "pym.ico"
