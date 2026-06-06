@@ -3,7 +3,7 @@ build/
 
 # Config file (local settings)
 config.json
-# CMake
+# CMake files
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake

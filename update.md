@@ -1,105 +1,76 @@
 # 更新日志
 
+## 1.3.3 - 2026-06-06 - GUI 精简与文档重构
+
+### 变更
+- **实现 `pym gui` 命令** — 使用 ShellExecuteEx 启动 pym-gui.exe，支持文件存在性检查与错误提示
+- **移除"刷新详细信息"按钮** — 版本信息面板改为即时显示（版本号、路径、可执行文件位置），切换版本时自动刷新
+- **移除 AsyncCommand 异步执行器** — 删除不再需要的异步命令基础设施，精简 GUI 代码
+- **重写 README.md** — 采用更专业的项目文档格式
+- **全量重新编译** — 清理 build 目录后从零构建所有目标
+
+### 文件变更
+- 修改: `src/command_handler.cpp` — 实现 `pym gui` 命令（启动 pym-gui.exe）
+- 修改: `src/gui/gui_main.cpp` — 精简版本信息面板，移除异步相关代码
+- 修改: `CMakeLists.txt` — 版本号更新到 1.3.3
+- 修改: `include/command_handler.h` — 版本号更新到 1.3.3
+- 重写: `README.md` — 专业级项目文档
+- 更新: `update.md` — 添加本条目
+
+## 1.3.2 - 2026-06-06 - GUI 稳定性修复和功能增强
+
+### BUG修复
+- **修复 GUI 白屏闪退** — 添加 try-catch 异常捕获，修复 ConfigManager 未加载错误
+- **修复 MessageBox 中文乱码** — 改用 MessageBoxW + utf8ToWide() UTF-16 转换
+- **修复 ImGui 中文显示为 ???** — 加载 Windows 系统中文字体（微软雅黑/黑体/宋体）
+- **修复"刷新详细信息"导致窗口卡死** — 使用 std::async 异步执行命令
+
+### 新增功能
+- 添加帮助面板（版本号、快捷操作、配置路径、作者信息）
+- 首次启动自动排列面板位置（5个面板两行布局）
+
+### 布局
+- 第一行：版本管理 | 版本信息
+- 第二行：命令执行 | 日志输出 | 帮助
+
+## 1.3.1 - 2026-06-06 - GUI 初步修复
+
+### 新增功能
+- 基于 Dear ImGui 的 GUI 界面（替代 Qt 方案）
+- Win32 API + DirectX 11 渲染后端
+- 5个功能面板：版本管理、版本信息、命令执行、包搜索、日志输出
+
+## 1.3.0 - 2026-06-06 - GUI 框架引入
+
+- 从 Qt 迁移至 Dear ImGui，零外部依赖
+
 ## 1.2.1 - 2026-06-05 - 性能优化和BUG修复
 
 ### 性能优化
-- 优化命令执行完成后的退出速度，从约3秒降低到约100ms
-- 优化进程等待超时时间，从 INFINITE 改为 5秒
-- 优化I/O线程等待时间，从1秒降低到100ms
-- 优化日志输出，只在错误级别时刷新日志文件
+- 退出速度从 ~3s 降低到 ~100ms
+- 进程等待超时优化（INFINITE → 5s）
+- I/O 线程等待优化（1s → 100ms）
 
 ### 功能改进
-- 更新日志文件存放位置到程序目录的logs文件夹
-- 自动创建logs目录（如果不存在）
-- 自动创建默认配置文件（如果config.json不存在）
-- 修复配置文件路径问题，确保在任何目录都能找到配置文件
+- 日志文件存放于程序目录 `logs/` 文件夹
+- 自动创建 logs 目录和默认配置文件
+- 配置文件路径问题修复（任意目录运行均可定位）
 
 ### BUG修复
-- 修复38个潜在BUG，包括：
-  - 内存/资源泄漏（6个）
-  - 异常处理（4个）
-  - 空指针检查（3个）
-  - 边界检查（3个）
-  - 字符串处理（2个）
-  - 线程安全（1个）
-  - 编码问题（2个）
-  - 缓存问题（2个）
-  - 死锁问题（1个）
+- 修复 38 个潜在 BUG（内存泄漏/异常处理/空指针/边界检查/字符串处理/线程安全/编码/缓存/死锁）
 
-### 文件变更
-- 修改: src/pythonw_proxy.cpp - 优化进程等待
-- 修改: src/command_handler.cpp - 优化进程执行
-- 修改: src/proxy_utils.cpp - 优化进程等待和I/O线程
-- 修改: src/logger.cpp - 优化日志输出
-- 修改: src/config_manager.cpp - 自动创建配置文件
-- 修改: src/main.cpp - 配置文件路径修复
-- 新增: include/proxy_utils.h - 添加getLogFilePath方法
-- 修改: src/proxy_utils.cpp - 实现日志路径生成
+## 1.2.0 - 2026-06-05 - pym python/pythonw/pip 命令
 
-## 1.2.0 - 2026-06-05 - 添加 pym python/pythonw/pip 命令功能
+- `pym python <command>` / `pym pythonw <command>` / `pym pip <command>`
+- 通过 pym 调用时显示详细日志；直接调用代理时仅输出结果
 
-### 新增功能
-- 添加 `pym python <command>` 命令，执行 Python 命令并显示详细日志
-- 添加 `pym pythonw <command>` 命令，执行 Pythonw 命令并显示详细日志
-- 添加 `pym pip <command>` 命令，执行 pip 命令并显示详细日志
-- 通过 pym 命令调用代理程序时，显示详细的日志信息
-- 直接调用代理程序时，仅输出命令结果（不显示日志）
+## 1.1.0 - 2026-06-05 - 可执行文件图标
 
-### 技术实现
-- 修改 Logger 类，添加 `setConsoleOutput(bool enable)` 方法，用于控制是否输出日志到控制台
-- 修改代理程序（python_proxy、pythonw_proxy、pip_proxy），检查 PYM_VERBOSE 环境变量：
-  - 如果 PYM_VERBOSE=1，输出详细日志到控制台
-  - 否则，只输出到文件，不输出到控制台
-- 修改 CommandHandler 类，添加三个新方法：
-  - `handlePython()` - 执行 Python 命令
-  - `handlePythonw()` - 执行 Pythonw 命令
-  - `handlePip()` - 执行 pip 命令
-- 添加辅助方法：
-  - `getExecutableDirectory()` - 获取可执行文件所在目录
-  - `executeProcessWithEnv()` - 执行进程并设置环境变量
+- pym.exe → pym.ico
+- python.exe / pythonw.exe → python.ico
 
-### 使用示例
-```powershell
-# 通过 pym 命令调用（显示详细日志）
-pym python --version
-pym python -c "print('Hello')"
-pym pip list
+## 1.0.0 - 初始版本
 
-# 直接调用代理程序（仅显示命令结果）
-python --version
-python -c "print('Hello')"
-pip list
-```
-
-### 文件变更
-- 修改: `include/logger.h` - 添加 `setConsoleOutput()` 方法声明
-- 修改: `src/logger.cpp` - 实现 `setConsoleOutput()` 方法
-- 修改: `src/python_proxy.cpp` - 添加 PYM_VERBOSE 环境变量检查
-- 修改: `src/pythonw_proxy.cpp` - 添加 PYM_VERBOSE 环境变量检查
-- 修改: `src/pip_proxy.cpp` - 添加 PYM_VERBOSE 环境变量检查
-- 修改: `include/command_handler.h` - 添加新方法声明
-- 修改: `src/command_handler.cpp` - 实现新方法
-- 修改: `CMakeLists.txt` - 更新版本号到 1.2.0
-
-## 1.1.0 - 2026-06-05 - 添加可执行文件图标
-
-### 新增功能
-- 为 pym.exe 添加专属图标 (pym.ico)
-- 为 python.exe 和 pythonw.exe 添加 Python 图标 (python.ico)
-
-### 技术实现
-- 创建 resources 目录存放图标文件和资源文件
-- 添加资源文件：
-  - `resources/pym.rc` - pym.exe 的资源文件
-  - `resources/python.rc` - python.exe 的资源文件
-  - `resources/pythonw.rc` - pythonw.exe 的资源文件
-- 更新 CMakeLists.txt，将资源文件添加到各可执行目标的编译中
-- 将 python-manager.exe 输出名称更改为 pym.exe
-
-### 文件变更
-- 新增: `resources/pym.ico`
-- 新增: `resources/python.ico`
-- 新增: `resources/pym.rc`
-- 新增: `resources/python.rc`
-- 新增: `resources/pythonw.rc`
-- 修改: `CMakeLists.txt`
+- 核心命令：list / switch / info / find / add
+- 代理机制：python / pythonw / pip
+- JSON 配置管理

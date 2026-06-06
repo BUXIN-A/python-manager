@@ -3,6 +3,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <filesystem>
 // 取消 Windows.h 中 ERROR 宏的定义，避免与 LogLevel::ERROR 冲突
 #ifdef ERROR
 #undef ERROR
@@ -53,9 +54,24 @@ void Logger::setFileOutput(bool enable, const std::string& filename) {
         if (logFile_.is_open()) {
             logFile_.close();
         }
+        
+        // 创建日志目录（如果不存在）
+        #ifdef _WIN32
+        std::filesystem::path logPath(logFilename_);
+        std::filesystem::path logDir = logPath.parent_path();
+        if (!logDir.empty() && !std::filesystem::exists(logDir)) {
+            try {
+                std::filesystem::create_directories(logDir);
+            } catch (const std::filesystem::filesystem_error& e) {
+                // 目录创建失败，无法记录日志
+                fileOutput_ = false;
+                return;
+            }
+        }
+        #endif
+        
         logFile_.open(logFilename_, std::ios::app);
         if (!logFile_.is_open()) {
-            LOG_ERROR("无法打开日志文件: " + logFilename_);
             fileOutput_ = false;
         }
     } else {

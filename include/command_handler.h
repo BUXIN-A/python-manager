@@ -192,7 +192,7 @@ private:
     int executeProcessWithEnv(const std::string& executablePath, const std::vector<std::string>& args, bool verbose);
 
     ConfigManager& configManager_;  // 配置管理器引用
-    static constexpr const char* VERSION = "1.2.1";  // 版本号
+    static constexpr const char* VERSION = "1.3.3";  // 版本号
 };
 
 #endif // COMMAND_HANDLER_H

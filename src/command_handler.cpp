@@ -444,7 +444,7 @@ void CommandHandler::handleHelp() {
     printUtf8("  switch <version>   切换到指定 Python 版本\n");
     printUtf8("  add [path]         添加 Python 版本（可选路径参数）\n");
     printUtf8("  info               查看当前 Python 版本信息\n");
-    printUtf8("  gui                启动 GUI 界面\n");
+    printUtf8("  gui                启动 GUI 图形界面 (pym-gui)\n");
     printUtf8("  find <package>     查找已安装的 Python 包\n");
     printUtf8("  python <command>   执行 Python 命令（显示详细日志）\n");
     printUtf8("  pythonw <command>  执行 Pythonw 命令（显示详细日志）\n");
@@ -660,11 +660,33 @@ void CommandHandler::handleInfo() {
  * @brief 处理 gui 命令 - 启动 GUI 界面
  */
 void CommandHandler::handleGui() {
-    LOG_INFO("执行 gui 命令");
-    
-    printUtf8("启动 GUI 界面...\n\n");
-    printUtf8("[占位功能] GUI 界面将在后续版本实现\n");
-    printUtf8("提示: 当前仅支持命令行模式\n");
+    LOG_INFO("执行 gui 命令，启动 pym-gui");
+
+    std::string exeDir = getExecutableDirectory();
+    std::string guiPath = exeDir + "\\pym-gui.exe";
+
+    if (!std::filesystem::exists(guiPath)) {
+        std::string error = "错误: 未找到 pym-gui.exe (" + guiPath + ")";
+        LOG_ERROR(error);
+        showErrorAndHelp(error);
+        return;
+    }
+
+    printUtf8("正在启动 Python Manager GUI...\n");
+
+    SHELLEXECUTEINFOA sei = {};
+    sei.cbSize = sizeof(sei);
+    sei.lpVerb = "open";
+    sei.lpFile = guiPath.c_str();
+    sei.nShow = SW_SHOWNORMAL;
+
+    if (!ShellExecuteExA(&sei)) {
+        std::string error = "错误: 无法启动 pym-gui.exe (错误码: " + std::to_string(GetLastError()) + ")";
+        LOG_ERROR(error);
+        printUtf8(error + "\n");
+    } else {
+        LOG_INFO("pym-gui 已启动");
+    }
 }
 
 /**

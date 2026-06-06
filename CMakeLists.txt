@@ -2,14 +2,14 @@
 # Python 版本管理器 (pym) - CMake 构建配置文件
 # =============================================================================
 # 项目：Python 版本管理器
-# 版本：1.2.1
-# 描述：提供 Python 版本管理和代理功能
+# 版本：1.3.0
+# 描述：提供 Python 版本管理和代理功能，使用 Dear ImGui 的 GUI 版本
 # =============================================================================
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 # 项目信息
-project(PythonManager VERSION 1.2.1 LANGUAGES CXX)
+project(PythonManager VERSION 1.3.3 LANGUAGES CXX)
 
 # =============================================================================
 # 1. 全局配置
@@ -66,16 +66,16 @@ if(MSVC)
 
     # Release 特定选项
     # /O2 - 最大化速度优化
-    # /GL - 全程序优化
     # /DNDEBUG - 禁用断言
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2 /GL /DNDEBUG")
+    # 注意：禁用 /GL 以避免与栈保护相关的优化问题
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2 /DNDEBUG")
 
     # 链接器 Release 选项
-    # /LTCG - 链接时代码生成
     # /OPT:REF - 移除未引用的函数
     # /OPT:ICF - 合并相同的函数
-    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LTCG /OPT:REF /OPT:ICF")
-    set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /LTCG /OPT:REF /OPT:ICF")
+    # 注意：禁用 /LTCG 以避免与栈保护相关的优化问题
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /OPT:REF /OPT:ICF")
+    set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /OPT:REF /OPT:ICF")
 else()
     # GCC/Clang 编译选项
     add_compile_options(-Wall -Wextra -Wpedantic)
@@ -112,11 +112,29 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib/Release)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # =============================================================================
-# 5. 库目标构建
+# 5. ImGui 库配置
+# =============================================================================
+
+# ImGui 源文件
+set(IMGUI_SOURCES
+    external/imgui/imgui.cpp
+    external/imgui/imgui_draw.cpp
+    external/imgui/imgui_tables.cpp
+    external/imgui/imgui_widgets.cpp
+    external/imgui/backends/imgui_impl_win32.cpp
+    external/imgui/backends/imgui_impl_dx11.cpp
+)
+
+# ImGui 头文件目录
+include_directories(${CMAKE_SOURCE_DIR}/external/imgui)
+include_directories(${CMAKE_SOURCE_DIR}/external/imgui/backends)
+
+# =============================================================================
+# 6. 库目标构建
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# 5.1 logger 库 - 日志记录库
+# 6.1 logger 库 - 日志记录库
 # -----------------------------------------------------------------------------
 add_library(logger_lib STATIC
     src/logger.cpp
@@ -143,7 +161,7 @@ target_compile_definitions(logger_lib PRIVATE
 )
 
 # -----------------------------------------------------------------------------
-# 5.2 config_manager 库 - 配置管理库
+# 6.2 config_manager 库 - 配置管理库
 # -----------------------------------------------------------------------------
 add_library(config_manager_lib STATIC
     src/config_manager.cpp
@@ -173,7 +191,7 @@ target_compile_definitions(config_manager_lib PRIVATE
 )
 
 # -----------------------------------------------------------------------------
-# 5.3 proxy_utils 库 - 代理程序工具库
+# 6.3 proxy_utils 库 - 代理程序工具库
 # -----------------------------------------------------------------------------
 add_library(proxy_utils_lib STATIC
     src/proxy_utils.cpp
@@ -206,11 +224,64 @@ target_compile_definitions(proxy_utils_lib PRIVATE
 )
 
 # =============================================================================
-# 6. 可执行文件目标构建
+# 7. GUI 目标构建 (Dear ImGui + DirectX 11)
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# 6.1 python-manager (pym) - 主管理工具
+# 7.1 pym-gui - GUI 版本管理工具 (Dear ImGui)
+# -----------------------------------------------------------------------------
+add_executable(pym-gui
+    src/gui/gui_main.cpp
+    ${IMGUI_SOURCES}
+    resources/gui.rc
+)
+
+# 设置输出名称
+set_target_properties(pym-gui PROPERTIES
+    OUTPUT_NAME "pym-gui"
+    VERSION ${PROJECT_VERSION}
+    WIN32_EXECUTABLE TRUE
+)
+
+# 包含目录
+target_include_directories(pym-gui PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/gui
+    ${CMAKE_SOURCE_DIR}/external/imgui
+    ${CMAKE_SOURCE_DIR}/external/imgui/backends
+)
+
+# 链接库
+target_link_libraries(pym-gui PRIVATE
+    config_manager_lib
+    logger_lib
+    d3d11.lib
+    dxgi.lib
+    shell32.lib  # 用于文件夹选择对话框
+    ole32.lib    # 用于 COM 接口
+)
+
+# pym-gui 编译选项
+if(MSVC)
+    target_compile_options(pym-gui PRIVATE /W4 /utf-8)
+else()
+    target_compile_options(pym-gui PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+# pym-gui 编译定义
+target_compile_definitions(pym-gui PRIVATE
+    $<$<CONFIG:Debug>:DEBUG>
+    $<$<CONFIG:Release>:NDEBUG>
+)
+
+message(STATUS "GUI 目标 pym-gui 已配置 (Dear ImGui + DirectX 11)")
+
+# =============================================================================
+# 8. 可执行文件目标构建 (命令行版本)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 8.1 python-manager (pym) - 主管理工具
 # -----------------------------------------------------------------------------
 add_executable(python-manager
     src/command_handler.cpp
@@ -244,7 +315,7 @@ target_compile_definitions(python-manager PRIVATE
 )
 
 # -----------------------------------------------------------------------------
-# 6.2 python_proxy - Python 解释器代理
+# 8.2 python_proxy - Python 解释器代理
 # -----------------------------------------------------------------------------
 add_executable(python_proxy
     src/python_proxy.cpp
@@ -278,7 +349,7 @@ target_compile_definitions(python_proxy PRIVATE
 )
 
 # -----------------------------------------------------------------------------
-# 6.3 pythonw_proxy - Pythonw 解释器代理（无控制台窗口）
+# 8.3 pythonw_proxy - Pythonw 解释器代理（无控制台窗口）
 # -----------------------------------------------------------------------------
 add_executable(pythonw_proxy
     src/pythonw_proxy.cpp
@@ -319,7 +390,7 @@ target_compile_definitions(pythonw_proxy PRIVATE
 )
 
 # -----------------------------------------------------------------------------
-# 6.4 pip_proxy - pip 包管理器代理
+# 8.4 pip_proxy - pip 包管理器代理
 # -----------------------------------------------------------------------------
 add_executable(pip_proxy
     src/pip_proxy.cpp
@@ -352,11 +423,11 @@ target_compile_definitions(pip_proxy PRIVATE
 )
 
 # =============================================================================
-# 7. 安装规则
+# 9. 安装规则
 # =============================================================================
 
 # 安装可执行文件
-install(TARGETS python-manager python_proxy pythonw_proxy pip_proxy
+install(TARGETS python-manager python_proxy pythonw_proxy pip_proxy pym-gui
     RUNTIME DESTINATION bin
     COMPONENT Runtime
 )
@@ -395,7 +466,7 @@ install(FILES
 )
 
 # =============================================================================
-# 8. 清理规则
+# 10. 清理规则
 # =============================================================================
 
 # 添加清理目标（用于清理构建生成的文件）
@@ -422,7 +493,7 @@ add_custom_target(clean_deep
 )
 
 # =============================================================================
-# 9. 打包配置
+# 11. 打包配置
 # =============================================================================
 
 # 设置 CPack 打包信息
@@ -446,7 +517,7 @@ endif()
 include(CPack)
 
 # =============================================================================
-# 10. 输出配置信息
+# 12. 输出配置信息
 # =============================================================================
 
 message(STATUS "")
@@ -467,6 +538,7 @@ message(STATUS "  - python-manager (pym): Python 版本管理工具")
 message(STATUS "  - python: Python 解释器代理")
 message(STATUS "  - pythonw: Pythonw 解释器代理")
 message(STATUS "  - pip: pip 包管理器代理")
+message(STATUS "  - pym-gui: GUI 版本管理工具 (Dear ImGui + DirectX 11)")
 message(STATUS "  - logger_lib: 日志记录库")
 message(STATUS "  - config_manager_lib: 配置管理库")
 message(STATUS "")
